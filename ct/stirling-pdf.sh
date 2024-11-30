@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-source <(curl -s https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
+source <(curl -s https://raw.githubusercontent.com/vhsdream/ProxmoxVE/pdf-test/misc/build.func)
 # Copyright (c) 2021-2024 tteck
 # Author: tteck (tteckster)
 # License: MIT
@@ -59,6 +59,10 @@ check_container_resources
 if [[ ! -d /opt/Stirling-PDF ]]; then msg_error "No ${APP} Installation Found!"; exit; fi
 msg_info "Updating ${APP}"
 systemctl stop stirlingpdf
+if [[ -n $(dpkg -l | grep -w ocrmypdf) ]] && [[ -z $(dpkg -l | grep -w qpdf) ]]; then
+  apt-get remove -y ocrmypdf &>/dev/null
+  apt-get install -y qpdf &>/dev/null
+fi
 RELEASE=$(curl -s https://api.github.com/repos/Stirling-Tools/Stirling-PDF/releases/latest | grep "tag_name" | awk '{print substr($2, 3, length($2)-4) }')
 wget -q https://github.com/Stirling-Tools/Stirling-PDF/archive/refs/tags/v$RELEASE.tar.gz
 tar -xzf v$RELEASE.tar.gz
