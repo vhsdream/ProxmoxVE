@@ -28,7 +28,7 @@ $STD apt-get install -y \
   make \
   g++ \
   unpaper \
-  ocrmypdf \
+  qpdf \
   poppler-utils
 msg_ok "Installed Dependencies"
 
@@ -74,8 +74,7 @@ $STD apt-get install -y 'tesseract-ocr-*'
 msg_ok "Installed Language Packs"
 
 msg_info "Installing Stirling-PDF (Additional Patience)"
-# RELEASE=$(curl -s https://api.github.com/repos/Stirling-Tools/Stirling-PDF/releases/latest | grep "tag_name" | awk '{print substr($2, 3, length($2)-4) }')
-RELEASE=0.34.0
+RELEASE=$(curl -s https://api.github.com/repos/Stirling-Tools/Stirling-PDF/releases/latest | grep "tag_name" | awk '{print substr($2, 3, length($2)-4) }')
 wget -q https://github.com/Stirling-Tools/Stirling-PDF/archive/refs/tags/v$RELEASE.tar.gz
 tar -xzf v$RELEASE.tar.gz
 cd Stirling-PDF-$RELEASE
