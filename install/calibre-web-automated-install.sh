@@ -123,7 +123,7 @@ Type=simple
 WorkingDirectory=/opt/cwa
 ExecStart=/usr/bin/bash -c /opt/cwa/scripts/ingest-service.sh
 TimeoutStopSec=10
-KillMode=process
+KillMode=mixed
 Restart=on-failure
 
 [Install]
@@ -140,7 +140,7 @@ Type=simple
 WorkingDirectory=/opt/cwa
 ExecStart=/usr/bin/bash -c /opt/cwa/scripts/change-detector.sh
 TimeoutStopSec=10
-KillMode=process
+KillMode=mixed
 Restart=on-failure
 
 [Install]
