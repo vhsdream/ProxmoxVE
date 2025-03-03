@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+source <(curl -s https://raw.githubusercontent.com/vhsdream/ProxmoxVE/refs/heads/cwa-standalone/misc/build.func)
+# Copyright (c) 2021-2025 community-scripts ORG
+# Author: vhsdream
+# License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
+# Source: https://github.com/crocodilestick/Calibre-Web-Automated
+
+APP="Calibre-Web-Automated"
+var_tags="eBook"
+var_cpu="2"
+var_ram="2048"
+var_disk="4"
+var_os="debian"
+var_version="12"
+var_unprivileged="1"
+
+header_info "$APP"
+variables
+color
+catch_errors
+
+function update_script() {
+    header_info
+    check_container_storage
+    check_container_resources
+
+    if [[ ! -d /opt/cwa ]]; then
+        msg_error "No ${APP} Installation Found!"
+        exit
+    fi
+
+    RELEASE=$(curl -s https://api.github.com/repos/crocodilestick/Calibre-Web-Automated/releases/latest | grep "tag_name" | awk '{print substr($2, 3, length($2)-4) }')
+    if [[ "${RELEASE}" != "$(cat /opt/${APP}_version.txt)" ]] || [[ ! -f /opt/${APP}_version.txt ]]; then
+        msg_info "Stopping $APP"
+        systemctl stop cps cwa-autolibrary cwa-ingester cwa-change-detector cwa-autozip.timer
+        msg_ok "Stopped $APP"
+
+        # Creating Backup
+        msg_info "Creating Backup"
+        $STD tar -czf "/opt/${APP}_backup_$(date +%F).tar.gz" /opt/cwa
+        cp dirs.json /opt/dirs.json.bak
+        msg_ok "Backup Created"
+
+        # Execute Update
+        msg_info "Updating $APP to v${RELEASE}"
+        cd /opt/kepubify
+        rm -rf kepubify-linux-64bit
+        curl -fsSLO https://github.com/pgaskin/kepubify/releases/latest/download/kepubify-linux-64bit
+        chmod +x kepubify-linux-64bit
+        cd /opt/calibre-web
+        $STD pip install --upgrade calibreweb
+        cd /opt/cwa
+        $STD git pull
+        $STD pip install -r requirements.txt
+        # The below is NOT for production!
+        wget -q https://raw.githubusercontent.com/vhsdream/cwa-lxc/refs/heads/git-patch/proxmox-lxc.patch -O /opt/cwa.patch
+        $STD git apply /opt/cwa.patch
+        cp -r /opt/cwa/root/app/calibre-web/cps/* /usr/local/lib/python3.11/dist-packages/calibreweb/cps
+        msg_ok "Updated $APP to v${RELEASE}"
+
+        msg_info "Starting $APP"
+        systemctl start cps cwa-autolibrary cwa-ingester cwa-change-detector cwa-autozip.timer
+        msg_ok "Started $APP"
+
+        # Cleaning up
+        msg_info "Cleaning Up"
+        rm -rf /opt/cwa.patch
+        msg_ok "Cleanup Completed"
+
+        # Last Action
+        echo "${RELEASE}" >/opt/${APP}_version.txt
+        msg_ok "Update Successful"
+    else
+        msg_ok "No update required. ${APP} is already at v${RELEASE}"
+    fi
+    exit
+}
+
+start
+build_container
+description
+
+msg_ok "Completed Successfully!\n"
+echo -e "${CREATING}${GN}${APP} setup has been successfully initialized!${CL}"
+echo -e "${INFO}${YW} Access it using the following URL:${CL}"
+echo -e "${TAB}${GATEWAY}${BGN}http://${IP}:[PORT]${CL}"
