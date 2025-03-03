@@ -54,11 +54,34 @@ $STD pip install calibreweb[goodreads,metadata,kobo]
 $STD pip install jsonschema
 msg_ok "Installed Calibre-Web"
 
+msg_info "Creating Calibre-Web Service"
+cat <<EOF >/etc/systemd/system/cps.service
+[Unit]
+Description=Calibre-Web Server
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/calibre-web
+ExecStart=/usr/local/bin/cps
+TimeoutStopSec=20
+KillMode=process
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+EOF
+msg_ok "Service file created"
+
+msg_info "Starting and then stopping Calibre-Web Service"
+systemctl start cps && sleep 5 && systemctl stop cps
+msg_ok "Calibre-Web Service successfully cycled"
+
 msg_info "Setup ${APPLICATION}"
-RELEASE=$(curl -s https://api.github.com/repos/crocodilestick/Calibre-Web-Automated/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3) }')
+RELEASE=$(curl -s https://api.github.com/repos/crocodilestick/Calibre-Web-Automated/releases/latest | grep "tag_name" | awk '{print substr($2, 3, length($2)-4) }')
 $STD git clone https://github.com/crocodilestick/Calibre-Web-Automated.git /opt/cwa --single-branch
 cd /opt/cwa
-$STD git checkout ${RELEASE}
+$STD git checkout V${RELEASE}
 $STD pip install -r requirements.txt
 # The following is NOT for production! Must find another way before making a PR!
 wget -q https://raw.githubusercontent.com/vhsdream/cwa-lxc/refs/heads/dev/proxmox-lxc.patch -O /opt/cwa.patch
@@ -79,23 +102,6 @@ cp -r /opt/cwa/root/app/calibre-web/cps/* /usr/local/lib/python3.11/dist-package
 msg_ok "Files copied"
 
 msg_info "Creating Services and Timers"
-cat <<EOF >/etc/systemd/system/cps.service
-[Unit]
-Description=Calibre-Web Server
-After=network.target
-
-[Service]
-Type=simple
-WorkingDirectory=/opt/calibre-web
-ExecStart=/usr/local/bin/cps
-TimeoutStopSec=20
-KillMode=process
-Restart=on-failure
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
 cat <<EOF >/etc/systemd/system/cwa-autolibrary.service
 [Unit]
 Description=Calibre-Web Automated Auto-Library Service
