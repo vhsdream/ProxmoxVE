@@ -61,7 +61,7 @@ cd /opt/cwa
 $STD git checkout ${RELEASE}
 $STD pip install -r requirements.txt
 # The following is NOT for production! Must find another way before making a PR!
-wget -q https://raw.githubusercontent.com/vhsdream/cwa-lxc/refs/heads/git-patch/proxmox-lxc.patch -O /opt/cwa.patch
+wget -q https://raw.githubusercontent.com/vhsdream/cwa-lxc/refs/heads/dev/proxmox-lxc.patch -O /opt/cwa.patch
 $STD git apply /opt/cwa.patch
 echo "${RELEASE}" >/opt/${APPLICATION}_version.txt
 msg_ok "Setup ${APPLICATION}"

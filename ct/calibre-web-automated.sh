@@ -53,7 +53,7 @@ function update_script() {
         $STD git pull
         $STD pip install -r requirements.txt
         # The below is NOT for production!
-        wget -q https://raw.githubusercontent.com/vhsdream/cwa-lxc/refs/heads/git-patch/proxmox-lxc.patch -O /opt/cwa.patch
+        wget -q https://raw.githubusercontent.com/vhsdream/cwa-lxc/refs/heads/dev/proxmox-lxc.patch -O /opt/cwa.patch
         $STD git apply /opt/cwa.patch
         cp -r /opt/cwa/root/app/calibre-web/cps/* /usr/local/lib/python3.11/dist-packages/calibreweb/cps
         msg_ok "Updated $APP to v${RELEASE}"
