@@ -58,7 +58,7 @@ msg_info "Setup ${APPLICATION}"
 RELEASE=$(curl -s https://api.github.com/repos/crocodilestick/Calibre-Web-Automated/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3) }')
 $STD git clone https://github.com/crocodilestick/Calibre-Web-Automated.git /opt/cwa --single-branch
 cd /opt/cwa
-$STD git checkout V${RELEASE}
+$STD git checkout ${RELEASE}
 $STD pip install -r requirements.txt
 # The following is NOT for production! Must find another way before making a PR!
 wget -q https://raw.githubusercontent.com/vhsdream/cwa-lxc/refs/heads/git-patch/proxmox-lxc.patch -O /opt/cwa.patch
