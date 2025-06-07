@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
+source <(curl -fsSL https://raw.githubusercontent.com/vhsdream/ProxmoxVE/refs/heads/immich-test/misc/build.func)
 # Copyright (c) 2021-2025 community-scripts ORG
 # Author: vhsdream
 # License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
@@ -193,36 +193,37 @@ function update_script() {
     GEO_DIR="${INSTALL_DIR}/geodata"
     VCHORD_RELEASE="$(curl -fsSL https://api.github.com/repos/tensorchord/vectorchord/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3) }')"
 
-    if [[ "$VCHORD_RELEASE" != "$(cat ~/.vchord_version)" ]] || [[ ! -f ~/.vchord_version ]]; then
+    if [[ ! -f ~/.vchord_version ]] || [[ "$VCHORD_RELEASE" != "$(cat ~/.vchord_version)" ]]; then
       msg_info "Updating VectorChord"
-      # if [[ ! "$(cat ~/.vchord-version)" > "0.3.0" ]]; then
-      #   $STD sudo -u postgres pg_dumpall --clean --if-exists --username=postgres | gzip >/etc/postgresql/immich-db-vchord0.3.0.sql.gz
-      #   chown postgres /etc/postgresql/immich-db-vchord0.3.0.sql.gz
-      #   $STD sudo -u postgres gunzip --stdout /etc/postgresql/immich-db-vchord0.3.0.sql.gz |
-      #     sed -e "s/SELECT pg_catalog.set_config('search_path', '', false);/SELECT pg_catalog.set_config('search_path', 'public, pg_catalog', true);/g" \
-      #       -e "/vchordrq.prewarm_dim/d" |
-      #     sudo -u postgres psql
-      # fi
-      curl -fsSL "https://github.com/tensorchord/vectorchord/download/${VCHORD_RELEASE}/postgresql-16-vchord_${VCHORD_RELEASE}-1_amd64.deb" -o vchord.deb
+      if [[ ! -f ~/.vchord-version ]] || [[ ! "$(cat ~/.vchord-version)" > "0.3.0" ]]; then
+        $STD sudo -u postgres pg_dumpall --clean --if-exists --username=postgres | gzip >/etc/postgresql/immich-db-vchord0.3.0.sql.gz
+        chown postgres /etc/postgresql/immich-db-vchord0.3.0.sql.gz
+        $STD sudo -u postgres gunzip --stdout /etc/postgresql/immich-db-vchord0.3.0.sql.gz |
+          sed -e "s/SELECT pg_catalog.set_config('search_path', '', false);/SELECT pg_catalog.set_config('search_path', 'public, pg_catalog', true);/g" \
+            -e "/vchordrq.prewarm_dim/d" |
+          sudo -u postgres psql
+      fi
+      curl -fsSL "https://github.com/tensorchord/vectorchord/releases/download/${VCHORD_RELEASE}/postgresql-16-vchord_${VCHORD_RELEASE}-1_amd64.deb" -o vchord.deb
       $STD apt install -y ./vchord.deb
       $STD sudo -u postgres psql -d immich -c "ALTER EXTENSION vchord UPDATE;"
       systemctl restart postgresql
-      if [[ ! "$(cat ~/.vchord_version)" > "0.3.0" ]]; then
+      if [[ ! -f ~/.vchord-version ]] || [[ ! "$(cat ~/.vchord_version)" > "0.3.0" ]]; then
         $STD sudo -u postgres psql -d immich -c "REINDEX DATABASE;"
       fi
       echo "$VCHORD_RELEASE" >~/.vchord_version
       rm ./vchord.deb
-      msg_ok "Updated VectorChord"
+      msg_ok "Updated VectorChord to v${VCHORD_RELEASE}"
     fi
 
     cp "$ML_DIR"/ml_start.sh "$INSTALL_DIR"
     rm -rf "${APP_DIR:?}"/*
     rm -rf "$SRC_DIR"
-    immich_zip=$(mktemp)
-    curl -fsSL "https://github.com/immich-app/immich/archive/refs/tags/v${RELEASE}.zip" -o "$immich_zip"
+    # immich_zip=$(mktemp)
+    # curl -fsSL "https://github.com/immich-app/immich/archive/refs/tags/v${RELEASE}.zip" -o "$immich_zip"
     msg_info "Updating ${APP} web and microservices"
-    unzip -q "$immich_zip"
-    mv "$APP-$RELEASE"/ "$SRC_DIR"
+    $STD git clone -b main https://github.com/immich-app/immich.git "$SRC_DIR"
+    # unzip -q "$immich_zip"
+    # mv "$APP-$RELEASE"/ "$SRC_DIR"
     mkdir -p "$ML_DIR"
     cd "$SRC_DIR"/server
     $STD npm install -g node-gyp node-pre-gyp
@@ -280,7 +281,7 @@ function update_script() {
     msg_ok "Updated ${APP} to v${RELEASE}"
 
     msg_info "Cleaning up"
-    rm -f "$immich_zip"
+    # rm -f "$immich_zip"
     $STD apt-get -y autoremove
     $STD apt-get -y autoclean
     msg_ok "Cleaned"
