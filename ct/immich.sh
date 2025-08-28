@@ -199,6 +199,92 @@ EOF
     msg_ok "Cleaned"
     systemctl restart immich-ml immich-web
   fi
+
+  (
+    shopt -s dotglob
+    rm -rf "${APP_DIR:?}"/*
+  )
+
+  rm -rf "$SRC_DIR"
+
+  fetch_and_deploy_gh_release "immich" "immich-app/immich" "tarball" "v${RELEASE}" "$SRC_DIR"
+
+  msg_info "Updating ${APP} web and microservices"
+  cd "$SRC_DIR"/server
+  if [[ "$RELEASE" == "1.135.1" ]]; then
+    rm ./src/schema/migrations/1750323941566-UnsetPrewarmDimParameter.ts
+  fi
+  export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+  export CI=1
+  corepack enable
+
+  # server build
+  export SHARP_IGNORE_GLOBAL_LIBVIPS=true
+  $STD pnpm --filter immich --frozen-lockfile build
+  unset SHARP_IGNORE_GLOBAL_LIBVIPS
+  export SHARP_FORCE_GLOBAL_LIBVIPS=true
+  $STD pnpm --filter immich --frozen-lockfile --prod --no-optional deploy "$APP_DIR"
+  cp "$APP_DIR"/package.json "$APP_DIR"/bin
+  sed -i 's|^start|./start|' "$APP_DIR"/bin/immich-admin
+
+  # openapi & web build
+  cd "$SRC_DIR"
+  echo "package-import-method=copy" >>./web/.npmrc
+  echo "prefer-symlinked-executables=false" >>./web/.npmrc
+  $STD pnpm --filter @immich/sdk --filter immich-web --frozen-lockfile --force install
+  $STD pnpm --filter @immich/sdk --filter immich-web build
+  cp -a web/build "$APP_DIR"/www
+  cp LICENSE "$APP_DIR"
+
+  # cli build
+  $STD pnpm --filter @immich/sdk --filter @immich/cli --frozen-lockfile install
+  $STD pnpm --filter @immich/sdk --filter @immich/cli build
+  $STD pnpm --filter @immich/cli --prod --no-optional deploy "$APP_DIR"/cli
+  cd "$APP_DIR"
+  mv "$INSTALL_DIR"/start.sh "$APP_DIR"/bin
+  msg_ok "Updated ${APP} web and microservices"
+
+  cd "$SRC_DIR"/machine-learning
+  mkdir -p "$ML_DIR"
+  export VIRTUAL_ENV="${ML_DIR}"/ml-venv
+  $STD /usr/local/bin/uv venv "$VIRTUAL_ENV"
+  if [[ -f ~/.openvino ]]; then
+    msg_info "Updating HW-accelerated machine-learning"
+    /usr/local/bin/uv -q sync --extra openvino --no-cache --active
+    patchelf --clear-execstack "${VIRTUAL_ENV}/lib/python3.11/site-packages/onnxruntime/capi/onnxruntime_pybind11_state.cpython-311-x86_64-linux-gnu.so"
+    msg_ok "Updated HW-accelerated machine-learning"
+  else
+    msg_info "Updating machine-learning"
+    /usr/local/bin/uv -q sync --extra cpu --no-cache --active
+    msg_ok "Updated machine-learning"
+  fi
+  cd "$SRC_DIR"
+  cp -a machine-learning/{ann,immich_ml} "$ML_DIR"
+  mv "$INSTALL_DIR"/ml_start.sh "$ML_DIR"
+  if [[ -f ~/.openvino ]]; then
+    sed -i "/intra_op/s/int = 0/int = os.cpu_count() or 0/" "$ML_DIR"/immich_ml/config.py
+  fi
+  ln -sf "$APP_DIR"/resources "$INSTALL_DIR"
+  cd "$APP_DIR"
+  grep -rl /usr/src | xargs -n1 sed -i "s|\/usr/src|$INSTALL_DIR|g"
+  grep -rlE "'/build'" | xargs -n1 sed -i "s|'/build'|'$APP_DIR'|g"
+  sed -i "s@\"/cache\"@\"$INSTALL_DIR/cache\"@g" "$ML_DIR"/immich_ml/config.py
+  ln -s "${UPLOAD_DIR:-/opt/immich/upload}" "$APP_DIR"/upload
+  ln -s "${UPLOAD_DIR:-/opt/immich/upload}" "$ML_DIR"/upload
+  ln -s "$GEO_DIR" "$APP_DIR"
+
+  chown -R immich:immich "$INSTALL_DIR"
+  if [[ ! -f ~/.debian_version.bak ]]; then
+    cp /etc/debian_version ~/.debian_version.bak
+    sed -i 's/.*/13.0/' /etc/debian_version
+  fi
+  msg_ok "Updated ${APP} to v${RELEASE}"
+
+  msg_info "Cleaning up"
+  $STD apt-get -y autoremove
+  $STD apt-get -y autoclean
+  msg_ok "Cleaned"
+  systemctl restart immich-ml immich-web
   exit
 }
 

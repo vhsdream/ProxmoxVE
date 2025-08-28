@@ -300,6 +300,8 @@ sed -i 's|^start|./start|' "$APP_DIR"/bin/immich-admin
 
 # openapi & web build
 cd "$SRC_DIR"
+echo "package-import-method=copy" >>./web/.npmrc
+echo "prefer-symlinked-executables=false" >>./web/.npmrc
 $STD pnpm --filter @immich/sdk --filter immich-web --frozen-lockfile --force install
 $STD pnpm --filter @immich/sdk --filter immich-web build
 cp -a web/build "$APP_DIR"/www
