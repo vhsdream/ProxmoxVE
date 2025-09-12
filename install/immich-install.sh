@@ -319,7 +319,6 @@ msg_ok "Installed Immich Server and Web Components"
 cd "$SRC_DIR"/machine-learning
 mkdir -p "$ML_DIR"
 export VIRTUAL_ENV="${ML_DIR}/ml-venv"
-$STD uv venv "$VIRTUAL_ENV"
 if [[ -f ~/.openvino ]]; then
   msg_info "Installing HW-accelerated machine-learning"
   uv -q sync --extra openvino --no-cache --active
