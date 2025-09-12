@@ -285,7 +285,12 @@ GEO_DIR="${INSTALL_DIR}/geodata"
 mkdir -p "$INSTALL_DIR"
 mkdir -p {"${APP_DIR}","${UPLOAD_DIR}","${GEO_DIR}","${INSTALL_DIR}"/cache}
 
-fetch_and_deploy_gh_release "immich" "immich-app/immich" "tarball" "v1.141.1" "$SRC_DIR"
+# fetch_and_deploy_gh_release "immich" "immich-app/immich" "tarball" "v1.141.1" "$SRC_DIR"
+
+cd /tmp
+curl -fsSLO https://github.com/immich-app/immich/archive/refs/tags/v1.142.0.zip
+$STD unzip v1.142.0.zip
+mv immich-1.142.0 "$SRC_DIR"
 
 msg_info "Installing ${APPLICATION} (more patience please)"
 

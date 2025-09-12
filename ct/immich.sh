@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
+source <(curl -fsSL https://raw.githubusercontent.com/vhsdream/ProxmoxVE/refs/heads/immich-1.142.0/misc/build.func)
 # Copyright (c) 2021-2025 community-scripts ORG
 # Author: vhsdream
 # License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
@@ -122,7 +122,12 @@ EOF
 
     rm -rf "$SRC_DIR"
 
-    fetch_and_deploy_gh_release "immich" "immich-app/immich" "tarball" "v${RELEASE}" "$SRC_DIR"
+    # fetch_and_deploy_gh_release "immich" "immich-app/immich" "tarball" "v${RELEASE}" "$SRC_DIR"
+
+    cd /tmp
+    curl -fsSLO https://github.com/immich-app/immich/archive/refs/tags/v1.142.0.zip
+    $STD unzip v1.142.0.zip
+    mv immich-1.142.0 "$SRC_DIR"
 
     msg_info "Updating ${APP} web and microservices"
     cd "$SRC_DIR"/server
