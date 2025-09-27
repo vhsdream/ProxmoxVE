@@ -22,7 +22,6 @@ $STD apt-get install -y --no-install-recommends \
   g++ \
   musl-dev \
   ffmpeg \
-  git \
   make \
   ca-certificates
 msg_ok "Installed Dependencies"
@@ -31,7 +30,10 @@ PYTHON_VERSION="3.13" setup_uv
 NODE_VERSION="22" setup_nodejs
 
 msg_info "Installing MeTube"
-$STD git clone https://github.com/alexta69/metube /opt/metube
+cd /tmp
+curl -fsSLO https://github.com/alexta69/metube/archive/refs/tags/2025.07.31.zip
+$STD unzip 2025.07.31.zip
+mv metube-2025.07.31 /opt/metube
 cd /opt/metube/ui
 $STD npm install
 $STD node_modules/.bin/ng build
