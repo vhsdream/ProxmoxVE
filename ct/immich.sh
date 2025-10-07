@@ -74,6 +74,19 @@ function update_script() {
     done
     msg_ok "Image-processing libraries up to date"
   fi
+
+  VCHORD_RELEASE="0.5.3"
+  if [[ ! -f ~/.vchord_version ]] || [[ "$VCHORD_RELEASE" != "$(cat ~/.vchord_version)" ]]; then
+    msg_info "Updating VectorChord"
+    curl -fsSL "https://github.com/tensorchord/vectorchord/releases/download/${VCHORD_RELEASE}/postgresql-16-vchord_${VCHORD_RELEASE}-1_amd64.deb" -o vchord.deb
+    $STD apt install -y ./vchord.deb
+    $STD sudo -u postgres psql -d immich -c "ALTER EXTENSION vchord UPDATE;"
+    systemctl restart postgresql
+    echo "$VCHORD_RELEASE" >~/.vchord_version
+    rm ./vchord.deb
+    msg_ok "Updated VectorChord to v${VCHORD_RELEASE}"
+  fi
+
   RELEASE="2.0.1"
   if check_for_gh_release "immich" "immich-app/immich" "${RELEASE}"; then
     msg_info "Stopping Services"
@@ -86,19 +99,6 @@ function update_script() {
     APP_DIR="${INSTALL_DIR}/app"
     ML_DIR="${APP_DIR}/machine-learning"
     GEO_DIR="${INSTALL_DIR}/geodata"
-    VCHORD_RELEASE="0.4.3"
-    # VCHORD_RELEASE="$(curl -fsSL https://api.github.com/repos/tensorchord/vectorchord/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3) }')"
-
-    if [[ ! -f ~/.vchord_version ]] || [[ "$VCHORD_RELEASE" != "$(cat ~/.vchord_version)" ]]; then
-      msg_info "Updating VectorChord"
-      curl -fsSL "https://github.com/tensorchord/vectorchord/releases/download/${VCHORD_RELEASE}/postgresql-16-vchord_${VCHORD_RELEASE}-1_amd64.deb" -o vchord.deb
-      $STD apt install -y ./vchord.deb
-      $STD sudo -u postgres psql -d immich -c "ALTER EXTENSION vchord UPDATE;"
-      systemctl restart postgresql
-      echo "$VCHORD_RELEASE" >~/.vchord_version
-      rm ./vchord.deb
-      msg_ok "Updated VectorChord to v${VCHORD_RELEASE}"
-    fi
 
     cp "$ML_DIR"/ml_start.sh "$INSTALL_DIR"
     if grep -qs "set -a" "$APP_DIR"/bin/start.sh; then
