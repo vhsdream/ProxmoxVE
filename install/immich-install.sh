@@ -272,7 +272,9 @@ GEO_DIR="${INSTALL_DIR}/geodata"
 mkdir -p "$INSTALL_DIR"
 mkdir -p {"${APP_DIR}","${UPLOAD_DIR}","${GEO_DIR}","${INSTALL_DIR}"/cache}
 
-fetch_and_deploy_gh_release "immich" "immich-app/immich" "tarball" "v2.0.1" "$SRC_DIR"
+# fetch_and_deploy_gh_release "immich" "immich-app/immich" "tarball" "v2.0.1" "$SRC_DIR"
+
+$STD git clone https://github.com/immich-app/immich.git -b main "$SRC_DIR"
 
 msg_info "Installing ${APPLICATION} (patience)"
 
@@ -293,6 +295,8 @@ sed -i 's|^start|./start|' "$APP_DIR"/bin/immich-admin
 # openapi & web build
 cd "$SRC_DIR"
 echo "packageImportMethod: hardlink" >>./pnpm-workspace.yaml
+unset SHARP_FORCE_GLOBAL_LIBVIPS
+export SHARP_IGNORE_GLOBAL_LIBVIPS
 $STD pnpm --filter @immich/sdk --filter immich-web --frozen-lockfile --force install
 $STD pnpm --filter @immich/sdk --filter immich-web build
 cp -a web/build "$APP_DIR"/www

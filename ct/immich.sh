@@ -123,7 +123,9 @@ EOF
 
     rm -rf "$SRC_DIR"
 
-    fetch_and_deploy_gh_release "immich" "immich-app/immich" "tarball" "v${RELEASE}" "$SRC_DIR"
+    # fetch_and_deploy_gh_release "immich" "immich-app/immich" "tarball" "v${RELEASE}" "$SRC_DIR"
+
+    $STD git clone https://github.com/immich-app/immich.git -b main "$SRC_DIR"
 
     msg_info "Updating ${APP} web and microservices"
     cd "$SRC_DIR"/server
@@ -143,6 +145,8 @@ EOF
     # openapi & web build
     cd "$SRC_DIR"
     echo "packageImportMethod: hardlink" >>./pnpm-workspace.yaml
+    unset SHARP_FORCE_GLOBAL_LIBVIPS
+    export SHARP_IGNORE_GLOBAL_LIBVIPS
     $STD pnpm --filter @immich/sdk --filter immich-web --frozen-lockfile --force install
     $STD pnpm --filter @immich/sdk --filter immich-web build
     cp -a web/build "$APP_DIR"/www
