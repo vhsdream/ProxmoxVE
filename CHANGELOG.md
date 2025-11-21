@@ -10,6 +10,21 @@
 > [!CAUTION]
 Exercise vigilance regarding copycat or coat-tailing sites that seek to exploit the project's popularity for potentially malicious purposes.
 
+## 2025-11-21
+
+### 🚀 Updated Scripts
+
+  - #### 🐞 Bug Fixes
+
+    - plex: prevent [] syntax issue [@MickLesk](https://github.com/MickLesk) ([#9318](https://github.com/community-scripts/ProxmoxVE/pull/9318))
+    - fix: karakeep strip "v" from release version [@CrazyWolf13](https://github.com/CrazyWolf13) ([#9324](https://github.com/community-scripts/ProxmoxVE/pull/9324))
+    - NetVisor: fix grep in update [@vhsdream](https://github.com/vhsdream) ([#9334](https://github.com/community-scripts/ProxmoxVE/pull/9334))
+    - Immich: pin correct version [@vhsdream](https://github.com/vhsdream) ([#9332](https://github.com/community-scripts/ProxmoxVE/pull/9332))
+
+  - #### 🔧 Refactor
+
+    - Refactor IPv6 disable logic and add 'disable' option [@MickLesk](https://github.com/MickLesk) ([#9326](https://github.com/community-scripts/ProxmoxVE/pull/9326))
+
 ## 2025-11-20
 
 ### 🚀 Updated Scripts
