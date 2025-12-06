@@ -73,7 +73,7 @@ EOF
   STAGING_DIR=/opt/staging
   BASE_DIR=${STAGING_DIR}/base-images
   SOURCE_DIR=${STAGING_DIR}/image-source
-  cd /root
+  cd /tmp
   if [[ -f ~/.intel_version ]]; then
     curl -fsSLO https://raw.githubusercontent.com/immich-app/immich/refs/heads/main/machine-learning/Dockerfile
     readarray -t INTEL_URLS < <(sed -n "/intel/p" ./Dockerfile | awk '{print $3}')
@@ -84,12 +84,13 @@ EOF
         curl -fsSLO "$url"
       done
       $STD apt-mark unhold libigdgmm12
+      $STD apt install -y ./libigdgmm12*.deb
       $STD apt install -y ./*.deb
       rm ./*.deb
       $STD apt-mark hold libigdgmm12
       msg_ok "Intel iGPU dependencies updated"
     fi
-    rm ~/Dockerfile
+    rm ./Dockerfile
   fi
   if [[ -f ~/.immich_library_revisions ]]; then
     libraries=("libjxl" "libheif" "libraw" "imagemagick" "libvips")
