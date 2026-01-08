@@ -52,6 +52,17 @@ function update_script() {
     TOOLCHAIN="$(grep "channel" /opt/scanopy/backend/rust-toolchain.toml | awk -F\" '{print $2}')"
     RUST_TOOLCHAIN=$TOOLCHAIN setup_rust
 
+    local db_name
+    db_name="$(sed -n '/^Database/s/.* //p' ~/scanopy.creds)"
+    if [[ "$db_name" != "scanopy_db" ]]; then
+      $STD sudo -u postgres psql -c "ALTER DATABASE $db_name RENAME TO scanopy_db;"
+      sed -i '\|^SCANOPY_DATABASE_URL|s|[^/]*$|scanopy_db|' /opt/scanopy.env.bak
+      sed -i '/^Database/s/[ ].*$/ scanopy_db/' ~/scanopy.creds
+    fi
+    if [[ $(cat ~/.scanopy) < "0.12.7" ]]; then
+      $STD sudo -u postgres psql -d scanopy_db -f /opt/scanopy/backend/scripts/fix_migration_data.sql
+    fi
+
     mv /opt/scanopy.env.bak /opt/scanopy/.env
     if [[ -f /opt/scanopy.oidc.toml ]]; then
       mv /opt/scanopy.oidc.toml /opt/scanopy/oidc.toml
