@@ -484,8 +484,7 @@ web=0
 until curl -fs localhost:2283/api/server/ping | grep -q "pong" || [[ $web -gt 1 ]]; do
   msg_warn "Problem detected with Immich-web service, restarting..."
   systemctl restart immich-web && sleep 5
-  [[ $(curl -fs localhost:2283/api/server/ping | grep "pong") ]] && break
-  ((web++))
+  [[ $(curl -fs localhost:2283/api/server/ping | grep "pong") ]] && break || ((web++))
 done
 [[ $web -lt 1 ]] && msg_ok "Immich-web service is reachable!" || msg_error "Please check '/var/log/immich/web.log' for more details"
 
