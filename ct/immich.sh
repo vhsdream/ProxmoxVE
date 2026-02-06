@@ -256,8 +256,8 @@ EOF
     until curl -fs localhost:2283/api/server/ping | grep -q "pong" || [[ $web -gt 1 ]]; do
       msg_warn "Problem detected with Immich-web service, restarting..."
       systemctl restart immich-web && sleep 5
-      [[ $(curl -fs localhost:2283/api/server/ping | grep "pong") ]] && break
-      $((web + 1))
+      curl -fs localhost:2283/api/server/ping | grep -q "pong" && break
+      ((web + 1))
     done
     [[ $web -lt 1 ]] && msg_ok "Immich-web service is reachable!" || msg_error "Please check '/var/log/immich/web.log' for more details"
 
@@ -266,7 +266,7 @@ EOF
       msg_warn "Problem detected with Immich-ml service, restarting..."
       systemctl restart immich-ml && sleep 5
       [[ $(curl -fs localhost:3003/ping) == "pong" ]] && break
-      $((ml + 1))
+      ((ml + 1))
     done
     [[ $ml -lt 1 ]] && msg_ok "Immich-ml service is reachable!" || msg_error "Please check '/var/log/immich/ml.log' for more details"
   fi
