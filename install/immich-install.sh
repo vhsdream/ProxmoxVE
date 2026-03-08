@@ -13,21 +13,21 @@ setting_up_container
 network_check
 update_os
 
-if [ -d /dev/dri ]; then
+if lscpu | grep -q 'GenuineIntel'; then
   echo ""
   echo ""
-  echo -e "🤖 ${BL}Immich Machine Learning Options${CL}"
+  echo -e "🤖 ${BL}Immich Machine-Learning Options${CL}"
   echo "─────────────────────────────────────────"
   echo "Please choose your machine-learning type:"
   echo ""
   echo " 1) CPU only (default)"
-  echo " 2) Intel OpenVINO (requires GPU passthrough)"
+  echo " 2) **NEW** Intel OpenVINO CPU or iGPU"
   echo ""
 
   read -r -p "${TAB3}Select machine-learning type [1]: " ML_TYPE
   ML_TYPE="${ML_TYPE:-1}"
-  if [[ "$ML_TYPE" == "2" ]]; then
-    msg_info "Installing OpenVINO dependencies"
+  if [[ "$ML_TYPE" == "2" ]] && [[ -d /dev/dri ]]; then
+    msg_info "Installing Intel OpenVINO dependencies"
     touch ~/.openvino
     $STD apt install -y --no-install-recommends patchelf
     tmp_dir=$(mktemp -d)
@@ -47,7 +47,7 @@ if [ -d /dev/dri ]; then
     $STD popd
     rm -rf "$tmp_dir"
     dpkg-query -W -f='${Version}\n' intel-opencl-icd >~/.intel_version
-    msg_ok "Installed OpenVINO dependencies"
+    msg_ok "Installed Intel OpenVINO dependencies"
   fi
 fi
 
@@ -341,11 +341,10 @@ $STD useradd -U -s /usr/sbin/nologin -r -M -d "$INSTALL_DIR" immich
 mkdir -p "$ML_DIR" && chown -R immich:immich "$INSTALL_DIR"
 export VIRTUAL_ENV="${ML_DIR}/ml-venv"
 if [[ -f ~/.openvino ]]; then
-  msg_info "Installing HW-accelerated machine-learning"
-  $STD uv add --no-sync --optional openvino onnxruntime-openvino==1.24.1 --active -n -p python3.13 --managed-python
+  msg_info "Installing Intel OpenVINO machine-learning"
   $STD sudo --preserve-env=VIRTUAL_ENV -nu immich uv sync --extra openvino --no-dev --active --link-mode copy -n -p python3.13 --managed-python
   patchelf --clear-execstack "${VIRTUAL_ENV}/lib/python3.13/site-packages/onnxruntime/capi/onnxruntime_pybind11_state.cpython-313-x86_64-linux-gnu.so"
-  msg_ok "Installed HW-accelerated machine-learning"
+  msg_ok "Installed Intel OpenVINO machine-learning"
 else
   msg_info "Installing machine-learning"
   $STD sudo --preserve-env=VIRTUAL_ENV -nu immich uv sync --extra cpu --no-dev --active --link-mode copy -n -p python3.11 --managed-python
