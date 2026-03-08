@@ -75,7 +75,17 @@ EOF
   BASE_DIR=${STAGING_DIR}/base-images
   SOURCE_DIR=${STAGING_DIR}/image-source
   cd /tmp
-  if [[ -f ~/.intel_version ]]; then
+
+  [[ ! -f ~/.openvino ]] && if lscpu | grep -q 'GenuineIntel'; then
+    echo ""
+    echo ""
+    echo -e "🤖 ${BL}Intel OpenVINO is now available even without iGPU passthrough!${CL}"
+    echo ""
+
+    read -r -p "${TAB3}Do you want to upgrade to Intel OpenVINO? [y/N] " CONFIRM
+    [[ $CONFIRM =~ ^([yY][eE][sS]|[yY])$ ]] && touch ~/.openvino
+  fi
+  if [[ -f ~/.openvino ]]; then
     curl -fsSLO https://raw.githubusercontent.com/immich-app/immich/refs/heads/main/machine-learning/Dockerfile
     readarray -t INTEL_URLS < <(
       sed -n "/intel-[igc|opencl]/p" ./Dockerfile | awk '{print $3}'
@@ -83,7 +93,7 @@ EOF
     )
     INTEL_RELEASE="$(grep "intel-opencl-icd_" ./Dockerfile | awk -F '_' '{print $2}')"
     if [[ "$INTEL_RELEASE" != "$(cat ~/.intel_version)" ]]; then
-      msg_info "Updating Intel iGPU dependencies"
+      msg_info "Updating Intel OpenVINO dependencies"
       for url in "${INTEL_URLS[@]}"; do
         curl -fsSLO "$url"
       done
@@ -94,10 +104,10 @@ EOF
       rm ./*.deb
       $STD apt-mark hold libigdgmm12
       dpkg-query -W -f='${Version}\n' intel-opencl-icd >~/.intel_version
-      msg_ok "Intel iGPU dependencies updated"
+      msg_ok "Updated Intel OpenVINO dependencies"
     fi
-    rm ./Dockerfile
   fi
+  rm ./Dockerfile
   if [[ -f ~/.immich_library_revisions ]]; then
     libraries=("libjxl" "libheif" "libraw" "imagemagick" "libvips")
     cd "$BASE_DIR"
@@ -218,11 +228,10 @@ EOF
     chown immich:immich ./uv.lock
     export VIRTUAL_ENV="${ML_DIR}"/ml-venv
     if [[ -f ~/.openvino ]]; then
-      msg_info "Updating HW-accelerated machine-learning"
-      $STD uv add --no-sync --optional openvino onnxruntime-openvino==1.24.1 --active -n -p python3.13 --managed-python
+      msg_info "Updating Intel OpenVINO machine-learning"
       $STD sudo --preserve-env=VIRTUAL_ENV -nu immich uv sync --extra openvino --no-dev --active --link-mode copy -n -p python3.13 --managed-python
       patchelf --clear-execstack "${VIRTUAL_ENV}/lib/python3.13/site-packages/onnxruntime/capi/onnxruntime_pybind11_state.cpython-313-x86_64-linux-gnu.so"
-      msg_ok "Updated HW-accelerated machine-learning"
+      msg_ok "Updated Intel OpenVINO machine-learning"
     else
       msg_info "Updating machine-learning"
       $STD sudo --preserve-env=VIRTUAL_ENV -nu immich uv sync --extra cpu --no-dev --active --link-mode copy -n -p python3.11 --managed-python
