@@ -164,7 +164,7 @@ SOURCE_DIR=${STAGING_DIR}/image-source
 $STD git clone -b main "$BASE_REPO" "$BASE_DIR"
 mkdir -p "$SOURCE_DIR"
 
-msg_info "(1/5) Compiling libjxl"
+msg_info "(1/4) Compiling libjxl"
 cd "$STAGING_DIR"
 SOURCE=${SOURCE_DIR}/libjxl
 JPEGLI_LIBJPEG_LIBRARY_SOVERSION="62"
@@ -202,9 +202,9 @@ ldconfig /usr/local/lib
 $STD make clean
 cd "$STAGING_DIR"
 rm -rf "$SOURCE"/{build,third_party}
-msg_ok "(1/5) Compiled libjxl"
+msg_ok "(1/4) Compiled libjxl"
 
-msg_info "(2/5) Compiling libheif"
+msg_info "(2/4) Compiling libheif"
 SOURCE=${SOURCE_DIR}/libheif
 : "${LIBHEIF_REVISION:=$(jq -cr '.revision' $BASE_DIR/server/sources/libheif.json)}"
 $STD git clone https://github.com/strukturag/libheif.git "$SOURCE"
@@ -227,7 +227,7 @@ ldconfig /usr/local/lib
 $STD make clean
 cd "$STAGING_DIR"
 rm -rf "$SOURCE"/build
-msg_ok "(2/5) Compiled libheif"
+msg_ok "(2/4) Compiled libheif"
 
 msg_info "(3/5) Compiling libraw"
 SOURCE=${SOURCE_DIR}/libraw
@@ -242,37 +242,21 @@ $STD make install
 ldconfig /usr/local/lib
 $STD make clean
 cd "$STAGING_DIR"
-msg_ok "(3/5) Compiled libraw"
+msg_ok "(3/4) Compiled libraw"
 
-msg_info "(4/5) Compiling imagemagick"
-SOURCE=$SOURCE_DIR/imagemagick
-: "${IMAGEMAGICK_REVISION:=$(jq -cr '.revision' $BASE_DIR/server/sources/imagemagick.json)}"
-$STD git clone https://github.com/ImageMagick/ImageMagick.git "$SOURCE"
-cd "$SOURCE"
-$STD git reset --hard "$IMAGEMAGICK_REVISION"
-$STD ./configure --with-modules CPPFLAGS="-DMAGICK_LIBRAW_VERSION_TAIL=202502"
-$STD make -j"$(nproc)"
-$STD make install
-ldconfig /usr/local/lib
-$STD make clean
-cd "$STAGING_DIR"
-msg_ok "(4/5) Compiled imagemagick"
-
-msg_info "(5/5) Compiling libvips"
+msg_info "(4/4) Compiling libvips"
 SOURCE=$SOURCE_DIR/libvips
 LIBVIPS_REVISION="0c9151a4f416d2f8ae20a755db218f6637050eec"
 $STD git clone https://github.com/libvips/libvips.git "$SOURCE"
 cd "$SOURCE"
 $STD git reset --hard "$LIBVIPS_REVISION"
 $STD meson setup build --buildtype=release --libdir=lib -Dintrospection=disabled -Dtiff=disabled
-cd build
-$STD ninja install
+$STD meson install -C build
 ldconfig /usr/local/lib
 cd "$STAGING_DIR"
 rm -rf "$SOURCE"/build
-msg_ok "(5/5) Compiled libvips"
+msg_ok "(4/4) Compiled libvips"
 {
-  echo "imagemagick: $IMAGEMAGICK_REVISION"
   echo "libheif: $LIBHEIF_REVISION"
   echo "libjxl: $LIBJXL_REVISION"
   echo "libraw: $LIBRAW_REVISION"

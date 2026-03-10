@@ -53,7 +53,7 @@
       "type": "info"
     },
     {
-      "text": "During first install, 5 custom libraries need to be compiled from source. Depending on your CPU, this can take anywhere between 15 minutes and 2 hours. Please be patient. Touch grass or something.",
+      "text": "During first install, 4 custom libraries need to be compiled from source. Depending on your CPU, this can take anywhere between 15 minutes and 2 hours. Please be patient. Touch grass or something.",
       "type": "warning"
     }
   ]

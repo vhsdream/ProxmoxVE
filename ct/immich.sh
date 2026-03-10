@@ -99,13 +99,17 @@ EOF
     rm ./Dockerfile
   fi
   if [[ -f ~/.immich_library_revisions ]]; then
-    libraries=("libjxl" "libheif" "libraw" "imagemagick" "libvips")
+    libraries=("libjxl" "libheif" "libraw" "libvips")
     cd "$BASE_DIR"
     msg_warn "Checking for updates to custom image-processing libraries (recompile time: 2-15min per library)"
     $STD git pull
     for library in "${libraries[@]}"; do
       compile_"$library"
     done
+    if [[ -f /usr/local/bin/magick ]]; then
+      rm -f /usr/local/bin/{magick*,compare,composite,conjure,convert,display,identify,import,Magick*,mogrify,montage,stream}
+      rm -rf /usr/local/lib/{ImageMagick*,libMagick*}
+    fi
     msg_ok "Image-processing libraries up to date"
   fi
 
@@ -357,27 +361,6 @@ function compile_libraw() {
   fi
 }
 
-function compile_imagemagick() {
-  SOURCE=$SOURCE_DIR/imagemagick
-  : "${IMAGEMAGICK_REVISION:=$(jq -cr '.revision' "$BASE_DIR"/server/sources/imagemagick.json)}"
-  if [[ "$IMAGEMAGICK_REVISION" != "$(grep 'imagemagick' ~/.immich_library_revisions | awk '{print $2}')" ]] ||
-    ! grep -q 'DMAGICK_LIBRAW' /usr/local/lib/ImageMagick-7*/config-Q16HDRI/configure.xml; then
-    msg_info "Recompiling ImageMagick"
-    [[ -d "$SOURCE" ]] && rm -rf "$SOURCE"
-    $STD git clone https://github.com/ImageMagick/ImageMagick.git "$SOURCE"
-    cd "$SOURCE"
-    $STD git reset --hard "$IMAGEMAGICK_REVISION"
-    $STD ./configure --with-modules CPPFLAGS="-DMAGICK_LIBRAW_VERSION_TAIL=202502"
-    $STD make -j"$(nproc)"
-    $STD make install
-    ldconfig /usr/local/lib
-    $STD make clean
-    cd "$STAGING_DIR"
-    sed -i "s/imagemagick: .*$/imagemagick: $IMAGEMAGICK_REVISION/" ~/.immich_library_revisions
-    msg_ok "Recompiled ImageMagick"
-  fi
-}
-
 function compile_libvips() {
   SOURCE=$SOURCE_DIR/libvips
   LIBVIPS_REVISION="0c9151a4f416d2f8ae20a755db218f6637050eec"
@@ -388,8 +371,7 @@ function compile_libvips() {
     cd "$SOURCE"
     $STD git reset --hard "$LIBVIPS_REVISION"
     $STD meson setup build --buildtype=release --libdir=lib -Dintrospection=disabled -Dtiff=disabled
-    cd build
-    $STD ninja install
+    $STD meson install -C build
     ldconfig /usr/local/lib
     cd "$STAGING_DIR"
     rm -rf "$SOURCE"/build
