@@ -21,11 +21,11 @@ msg_ok "Installed Dependencies"
 PG_VERSION="17" setup_postgresql
 PG_DB_NAME="patchmon_db" PG_DB_USER="patchmon_usr" setup_postgresql_db
 
-fetch_and_deploy_gh_release "PatchMon" "PatchMon/PatchMon" "singlefile" "v2.0.0" "/opt/patchmon" "patchmon-server-linux-amd64"
-cp /opt/patchmon/PatchMon /opt/patchmon/patchmon-server
+RELEASE="v2.0.0"
+fetch_and_deploy_gh_release "PatchMon" "PatchMon/PatchMon" "singlefile" "$RELEASE" "/opt/patchmon" "patchmon-server-linux-amd64"
+mv /opt/patchmon/PatchMon /opt/patchmon/patchmon-server
 
 msg_info "Configuring PatchMon"
-VERSION=$(get_latest_github_release "PatchMon/PatchMon")
 cat <<EOF >/opt/patchmon/.env
 DATABASE_URL="postgresql://$PG_DB_USER:$PG_DB_PASS@localhost:5432/$PG_DB_NAME"
 JWT_SECRET="$(openssl rand -hex 64)"
@@ -66,10 +66,22 @@ msg_ok "Configured PatchMon"
 
 msg_info "Fetching PatchMon agent binaries"
 mkdir -p /opt/patchmon/agents
-FILE_URL="https://github.com/PatchMon/PatchMon/releases/download/v${VERSION}/patchmon-agent-"
-AGENT_NAME=("linux-amd64" "linux-arm64" "freebsd-amd64" "freebsd-arm64" "windows-amd64.exe" "windows-arm64.exe")
+FILE_URL="https://github.com/PatchMon/PatchMon/releases/download/${RELEASE}/patchmon-agent-"
+AGENT_NAME=(
+  "linux-amd64"
+  "linux-arm64"
+  "linux-arm"
+  "linux-386"
+  "freebsd-amd64"
+  "freebsd-arm64"
+  "freebsd-arm"
+  "freebsd-386"
+  "windows-amd64.exe"
+  "windows-arm64.exe"
+)
 for arch in "${AGENT_NAME[@]}"; do
-  curl_with_retry "${FILE_URL}$arch" /opt/patchmon/agents/patchmon-agent-${arch}
+  curl_with_retry "${FILE_URL}${arch}" "/opt/patchmon/agents/patchmon-agent-${arch}"
+  [[ "${arch}" != *.exe ]] && chmod 755 "/opt/patchmon/agents/patchmon-agent-${arch}"
 done
 msg_ok "Fetched PatchMon agent binaries"
 

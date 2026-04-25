@@ -67,14 +67,26 @@ function update_script() {
     fi
 
     CLEAN_INSTALL=1 fetch_and_deploy_gh_release "PatchMon" "PatchMon/PatchMon" "singlefile" "${RELEASE}" "/opt/patchmon" "patchmon-server-linux-amd64"
-    cp /opt/patchmon/PatchMon /opt/patchmon/patchmon-server
+    mv /opt/patchmon/PatchMon /opt/patchmon/patchmon-server
 
     msg_info "Fetching PatchMon agent binaries"
     [[ ! -d /opt/patchmon/agents ]] && mkdir -p /opt/patchmon/agents
     FILE_URL="https://github.com/PatchMon/PatchMon/releases/download/${RELEASE}/patchmon-agent-"
-    AGENT_NAME=("linux-amd64" "linux-arm64" "freebsd-amd64" "freebsd-arm64" "windows-amd64.exe" "windows-arm64.exe")
+    AGENT_NAME=(
+      "linux-amd64"
+      "linux-arm64"
+      "linux-arm"
+      "linux-386"
+      "freebsd-amd64"
+      "freebsd-arm64"
+      "freebsd-arm"
+      "freebsd-386"
+      "windows-amd64.exe"
+      "windows-arm64.exe"
+    )
     for arch in "${AGENT_NAME[@]}"; do
-      curl_with_retry "${FILE_URL}$arch" /opt/patchmon/agents/patchmon-agent-${arch}
+      curl_with_retry "${FILE_URL}${arch}" "/opt/patchmon/agents/patchmon-agent-${arch}"
+      [[ "${arch}" != *.exe ]] && chmod 755 "/opt/patchmon/agents/patchmon-agent-${arch}"
     done
     msg_ok "Fetched PatchMon agent binaries"
 
