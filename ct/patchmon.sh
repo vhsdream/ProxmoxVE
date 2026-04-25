@@ -53,6 +53,7 @@ function update_script() {
         -e '/^SERVER_*/d' \
         -e '/^# API*/,+2d' /opt/patchmon/.env
       {
+        echo ""
         echo "SESSION_SECRET=$(openssl rand -hex 64)"
         echo "AI_ENCRYPTION_KEY=$(openssl rand -hex 64)"
         echo "AGENT_BINARIES_DIR=/opt/patchmon/agents"
