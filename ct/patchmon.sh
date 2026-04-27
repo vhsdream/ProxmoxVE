@@ -44,7 +44,13 @@ function update_script() {
       systemctl disable -q --now nginx
       $STD npm cache clean --force
       $STD apt autoremove --purge -y {nginx,nodejs}
-      cp /etc/apt/sources.list.d/nodesource.sources /etc/apt/sources.list.d/nodesource.sources.bak
+      if [[ -f /etc/apt/sources.list.d/nodesource.sources ]]; then
+        cp /etc/apt/sources.list.d/nodesource.sources /etc/apt/sources.list.d/nodesource.sources.bak
+        rm -f /etc/apt/sources.list.d/nodesource.sources
+      elif [[ -f /etc/apt/sources.list.d/nodesource.list ]]; then
+        cp /etc/apt/sources.list.d/nodesource.list /etc/apt/sources.list.d/nodesource.list.bak
+        rm -f /etc/apt/sources.list.d/nodesource.list
+      fi
       rm -rf /opt/patchmon
       mkdir -p /opt/patchmon/agents
       cp /opt/legacy.env /opt/patchmon/.env
