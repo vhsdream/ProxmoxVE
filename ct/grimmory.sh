@@ -69,11 +69,23 @@ function update_script() {
     CLEAN_INSTALL=1 fetch_and_deploy_gh_release "grimmory" "grimmory-tools/grimmory" "singlefile" "latest" "/opt/grimmory/dist" "grimmory-v*.jar"
     mv /opt/grimmory/dist/grimmory /opt/grimmory/dist/app.jar
 
+    if [[ -f /opt/booklore_storage/data/tools/kepubify/kepubify-linux-64bit ]]; then
+      msg_info "Migrating Kepubify to /usr/local/bin"
+      mv /opt/booklore_storage/data/tools/kepubify/kepubify-linux-64bit /usr/local/bin/kepubify
+      msg_ok "Migrated Kepubify to /usr/local/bin"
+    fi
+
     if systemctl is-active --quiet nginx 2>/dev/null; then
       msg_info "Removing Nginx (no longer needed)"
       systemctl disable --now nginx
       $STD apt-get purge -y nginx nginx-common
       msg_ok "Removed Nginx"
+    fi
+
+    if [[ -f /etc/apt/sources.list.d/nodesource.sources ]]; then
+      msg_info "Removing NodeJS (no longer needed)"
+      $STD apt-get purge -y nodejs
+      msg_ok "Removed NodeJS"
     fi
 
     if ! grep -q "^SERVER_PORT=" /opt/booklore_storage/.env 2>/dev/null; then
