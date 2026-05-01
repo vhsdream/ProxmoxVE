@@ -35,6 +35,23 @@ DATABASE_PASSWORD=${MARIDB_DB_PASS}
 APP_PATH_CONFIG=/opt/booklore_storage/data
 APP_BOOKDROP_FOLDER=/opt/booklore_storage/bookdrop
 SERVER_PORT=6060
+JAVA_TOOL_OPTIONS="-XX:+UseShenandoahGC \
+    -XX:ShenandoahGCHeuristics=compact \
+    -XX:+UseCompactObjectHeaders \
+    -XX:MaxRAMPercentage=60.0 \
+    -XX:InitialRAMPercentage=8.0 \
+    -XX:+ExitOnOutOfMemoryError \
+    -XX:+HeapDumpOnOutOfMemoryError \
+    -XX:HeapDumpPath=/tmp/heapdump.hprof \
+    -XX:MaxMetaspaceSize=256m \
+    -XX:ReservedCodeCacheSize=48m \
+    -Xss512k \
+    -XX:CICompilerCount=2 \
+    -XX:+UnlockExperimentalVMOptions \
+    -XX:+UseStringDeduplication \
+    -XX:ShenandoahUncommitDelay=5000 \
+    -XX:ShenandoahGuaranteedGCInterval=30000 \
+    -XX:MaxDirectMemorySize=256m"
 EOF
 msg_ok "Configured Environment"
 
@@ -47,7 +64,8 @@ After=network.target mariadb.service
 [Service]
 User=root
 WorkingDirectory=/opt/grimmory/dist
-ExecStart=/usr/bin/java -XX:+UseG1GC -XX:+UseStringDeduplication -XX:+UseCompactObjectHeaders -XX:MaxRAMPercentage=75.0 -XX:+ExitOnOutOfMemoryError -jar /opt/grimmory/dist/app.jar
+EnvironmentFile=/opt/booklore_storage/.env
+ExecStart=/usr/bin/java --enable-native-access=ALL-UNNAMED --enable-preview -jar /opt/grimmory/dist/app.jar
 EnvironmentFile=/opt/booklore_storage/.env
 SuccessExitStatus=143
 TimeoutStopSec=10

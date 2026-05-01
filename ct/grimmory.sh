@@ -45,17 +45,17 @@ function update_script() {
     fi
     msg_ok "Stopped Service"
 
-    if grep -qE "^BOOKLORE_(DATA_PATH|BOOKDROP_PATH|BOOKS_PATH|PORT)=" /opt/booklore_storage/.env 2>/dev/null; then
-      msg_info "Migrating old environment variables"
-      sed -i 's/^BOOKLORE_DATA_PATH=/APP_PATH_CONFIG=/g' /opt/booklore_storage/.env
-      sed -i 's/^BOOKLORE_BOOKDROP_PATH=/APP_BOOKDROP_FOLDER=/g' /opt/booklore_storage/.env
-      sed -i '/^BOOKLORE_BOOKS_PATH=/d' /opt/booklore_storage/.env
-      sed -i '/^BOOKLORE_PORT=/d' /opt/booklore_storage/.env
-      msg_ok "Migrated old environment variables"
-    fi
-
     if [[ -d /opt/booklore ]]; then
       msg_warn "Migrating booklore to grimmory"
+    fi
+
+    if grep -qE "^BOOKLORE_(DATA_PATH|BOOKDROP_PATH|BOOKS_PATH|PORT)=" /opt/booklore_storage/.env 2>/dev/null; then
+      msg_info "Migrating old environment variables"
+      sed -i -e 's/^BOOKLORE_DATA_PATH=/APP_PATH_CONFIG=/g' \
+        -e 's/^BOOKLORE_BOOKDROP_PATH=/APP_BOOKDROP_FOLDER=/g' \
+        -e '/^BOOKLORE_BOOKS_PATH=/d' \
+        -e '/^BOOKLORE_PORT=/d' /opt/booklore_storage/.env
+      msg_ok "Migrated old environment variables"
     fi
 
     msg_info "Backing up old installation"
@@ -92,10 +92,34 @@ function update_script() {
       echo "SERVER_PORT=6060" >>/opt/booklore_storage/.env
     fi
 
+    if ! grep -q "JAVA_TOOL" /opt/booklore_storage/.env; then
+      {
+        echo ""
+        echo 'JAVA_TOOL_OPTIONS="-XX:+UseShenandoahGC \
+          -XX:ShenandoahGCHeuristics=compact \
+          -XX:+UseCompactObjectHeaders \
+          -XX:MaxRAMPercentage=60.0 \
+          -XX:InitialRAMPercentage=8.0 \
+          -XX:+ExitOnOutOfMemoryError \
+          -XX:+HeapDumpOnOutOfMemoryError \
+          -XX:HeapDumpPath=/tmp/heapdump.hprof \
+          -XX:MaxMetaspaceSize=256m \
+          -XX:ReservedCodeCacheSize=48m \
+          -Xss512k \
+          -XX:CICompilerCount=2 \
+          -XX:+UnlockExperimentalVMOptions \
+          -XX:+UseStringDeduplication \
+          -XX:ShenandoahUncommitDelay=5000 \
+          -XX:ShenandoahGuaranteedGCInterval=30000 \
+          -XX:MaxDirectMemorySize=256m"'
+      } >>/opt/booklore_storage/.env
+    fi
+
     if test -f /etc/systemd/system/booklore.service; then
       mv /etc/systemd/system/booklore.service /etc/systemd/system/grimmory.service
       sed -i -e 's|WorkingDirectory=.*|WorkingDirectory=/opt/grimmory/dist|' \
-        -e 's|ExecStart=.*|ExecStart=/usr/bin/java -XX:+UseG1GC -XX:+UseStringDeduplication -XX:+UseCompactObjectHeaders -XX:MaxRAMPercentage=75.0 -XX:+ExitOnOutOfMemoryError -jar /opt/grimmory/dist/app.jar|' /etc/systemd/system/grimmory.service
+        -e '\|dist$|a EnvironmentFile=/opt/booklore_storage/.env' \
+        -e 's|ExecStart=.*|ExecStart=/usr/bin/java --enable-native-access=ALL-UNNAMED --enable-preview -jar /opt/grimmory/dist/app.jar|' /etc/systemd/system/grimmory.service
       systemctl daemon-reload
       systemctl -q enable grimmory
     fi
