@@ -26,12 +26,14 @@ fetch_and_deploy_gh_release "grimmory" "grimmory-tools/grimmory" "singlefile" "l
 mv /opt/grimmory/dist/grimmory /opt/grimmory/dist/app.jar
 
 msg_info "Configuring Environment"
+VERSION="$(cat ~/.grimmory)"
 mkdir -p /opt/booklore_storage/{books,bookdrop,data}
 cat <<EOF >/opt/booklore_storage/.env
 DATABASE_URL=jdbc:mariadb://localhost:3306/${MARIADB_DB_NAME}
 DATABASE_USERNAME=${MARIADB_DB_USER}
 DATABASE_PASSWORD=${MARIDB_DB_PASS}
 
+APP_VERSION=${VERSION}
 APP_PATH_CONFIG=/opt/booklore_storage/data
 APP_BOOKDROP_FOLDER=/opt/booklore_storage/bookdrop
 SERVER_PORT=6060

@@ -68,6 +68,7 @@ function update_script() {
 
     CLEAN_INSTALL=1 fetch_and_deploy_gh_release "grimmory" "grimmory-tools/grimmory" "singlefile" "latest" "/opt/grimmory/dist" "grimmory-v*.jar"
     mv /opt/grimmory/dist/grimmory /opt/grimmory/dist/app.jar
+    VERSION="$(cat ~/.grimmory)"
 
     if [[ -f /opt/booklore_storage/data/tools/kepubify/kepubify-linux-64bit ]]; then
       msg_info "Migrating Kepubify to /usr/local/bin"
@@ -90,6 +91,9 @@ function update_script() {
 
     if ! grep -q "^SERVER_PORT=" /opt/booklore_storage/.env 2>/dev/null; then
       echo "SERVER_PORT=6060" >>/opt/booklore_storage/.env
+    fi
+    if ! grep -q "APP_VERSION" /opt/booklore_storage/.env; then
+      sed -i "/PATH_CONFIG/i APP_VERSION=${VERSION}" /opt/booklore_storage/.env
     fi
 
     if ! grep -q "JAVA_TOOL" /opt/booklore_storage/.env; then
